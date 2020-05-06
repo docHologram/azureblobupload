@@ -1,0 +1,52 @@
+﻿@page
+@model AzureBlobUpload.Pages.EditFileModel
+@{
+	ViewData["Title"] = "Edit File";
+}
+
+<div class="container-fluid">
+	<h1 class="display-4">Edit File</h1>
+
+	<div>
+		<div class="row">
+			<div class="col-md-2">
+				<div class="row">
+					<div class="col-md-12">
+						<img src="data:@Model.FileInfo.ContentType;base64, @Model.FileInfo.Base64FileData" />
+					</div>
+				</div>
+			</div>
+			<div class="col-md-10">
+				<div class="row">
+					<div class="col-md-2">
+						<b>Name</b>
+					</div>
+					<div class="col-md-2">@Model.FileInfo.Name</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						<b>Content-Type</b>
+					</div>
+					<div class="col-md-2">@Model.FileInfo.ContentType</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						<b>URI</b>
+					</div>
+					<div class="col-md-7">@Model.FileInfo.Uri</div>
+				</div>
+				<div class="row">
+					<div class="col-md-4"><b>Replace File <br/>(ensure file has same name)</b></div>
+					<div class="col-md-8">
+						<form method="post"
+							enctype="multipart/form-data">
+							<input type="file"
+									asp-for="Upload" />
+							<input type="submit" />
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

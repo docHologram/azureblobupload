@@ -1,0 +1,30 @@
+﻿@page
+@model AzureBlobUpload.Pages.UploadModel
+@{
+    ViewData["Title"] = "Upload";
+}
+
+<div>
+	<h1 class="display-4">Upload File</h1>
+	
+	<div>
+		<form method="post" enctype="multipart/form-data">
+			<input type="file" asp-for="Upload" />
+			<input type="submit" />
+		</form>
+	</div>
+
+	<div class="row">
+		<div class="col-md-3"><b>Blob Name</b></div>
+		<div class="col-md-2"><b>Blob Type</b></div>
+		<div class="col-md-7"><b>URI</b></div>
+	</div>
+	@foreach (var logo in Model.CarrierLogos)
+	{
+		<div class="row">
+			<div class="col-md-3">@logo.Name</div>
+			<div class="col-md-2">@logo.BlobType.ToString()</div>
+			<div class="col-md-7"><a asp-page="/EditFile" asp-route-filename="@logo.Name">@logo.Uri.AbsoluteUri</a></div>
+		</div>
+	}
+</div>
