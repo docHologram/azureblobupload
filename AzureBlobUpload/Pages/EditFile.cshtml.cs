@@ -18,9 +18,12 @@ namespace AzureBlobUpload.Pages
 		public string Uri { get; set; }
 	}
 
-    public class EditFileModel : PageModel
-    {
+	public class EditFileModel : PageModel
+	{
 		private readonly IOptions<StorageAccountInfo> _storageAccountInfOptions;
+
+		public EditFileModel(IOptions<StorageAccountInfo> storageAccountInfOptions)
+			=> _storageAccountInfOptions = storageAccountInfOptions;
 
 		[BindProperty]
 		public FileInfo FileInfo { get; set; }
@@ -28,12 +31,9 @@ namespace AzureBlobUpload.Pages
 		[BindProperty]
 		public IFormFile Upload { get; set; }
 
-		public EditFileModel(IOptions<StorageAccountInfo> storageAccountInfOptions) 
-			=> _storageAccountInfOptions = storageAccountInfOptions;
-
 		public async Task OnGetAsync(string fileName)
-        {
-			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);  
+		{
+			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);
 			var blobClient = cloudStorageAccount.CreateCloudBlobClient();
 			var container = blobClient.GetContainerReference(_storageAccountInfOptions.Value.ContainerName);
 			var file = await container.GetBlobReferenceFromServerAsync(fileName);
@@ -46,7 +46,7 @@ namespace AzureBlobUpload.Pages
 					Name = file.Name,
 					Uri = file.Uri.AbsoluteUri
 				};
-				
+
 				using (var memoryStream = new MemoryStream())
 				{
 					await file.DownloadToStreamAsync(memoryStream);
@@ -71,5 +71,5 @@ namespace AzureBlobUpload.Pages
 			var uri = cloudBlockBlob.Uri.AbsoluteUri;
 			await OnGetAsync(fileName);
 		}
-    }
+	}
 }

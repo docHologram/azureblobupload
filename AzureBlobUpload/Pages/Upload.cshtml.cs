@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +42,7 @@ namespace AzureBlobUpload.Pages
 			var fileName = Upload.FileName;
 			var fileMimeType = Upload.ContentType;
 
-			if (await cloudBlobContainer.CreateIfNotExistsAsync()) 
+			if (await cloudBlobContainer.CreateIfNotExistsAsync())
 				await cloudBlobContainer.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
 
 			var cloudBlockBlob = cloudBlobContainer.GetBlockBlobReference(fileName);
