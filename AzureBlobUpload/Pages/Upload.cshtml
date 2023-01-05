@@ -31,7 +31,7 @@
 	{
 		<div class="row">
 			<div class="col-md-3">@logo.Name</div>
-			<div class="col-md-2">@logo.BlobType.ToString()</div>
+			<div class="col-md-2">@logo.GetType()</div>
 			<div class="col-md-7">
 				<a asp-page="/EditFile"
 					asp-route-filename="@logo.Name">

@@ -4,8 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
+
 using Microsoft.Extensions.Options;
 
 namespace AzureBlobUpload.Pages

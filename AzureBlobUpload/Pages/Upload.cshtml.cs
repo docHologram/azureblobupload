@@ -1,57 +1,61 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Azure.Storage.Blobs.Models;
+using MediatR;
+using AzureBlobUpload.Events;
+
 
 namespace AzureBlobUpload.Pages
 {
 	public class UploadModel : PageModel
 	{
 		private readonly IOptions<StorageAccountInfo> _storageAccountInfOptions;
+		private readonly IMediator _mediator;
+		private readonly ILogger _logger;
 
-		public UploadModel(IOptions<StorageAccountInfo> storageAccountInfOptions)
-			=> _storageAccountInfOptions = storageAccountInfOptions;
+		public UploadModel(IOptions<StorageAccountInfo> storageAccountInfOptions, IMediator mediator, ILogger logger)
+		{
+            _storageAccountInfOptions = storageAccountInfOptions;
+			_mediator = mediator;
+			_logger = logger;
+        }
 
 		[BindProperty]
 		public IFormFile Upload { get; set; }
 
 		[BindProperty]
-		public List<CloudBlob> CarrierLogos { get; set; }
+		public List<BlobItem> CarrierLogos { get; set; }
 
-		public void OnGet()
+		public async void OnGetAsync()
 		{
-			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);
-			var cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
-			var cloudBlobContainer = cloudBlobClient.GetContainerReference(_storageAccountInfOptions.Value.ContainerName);
-
-			CarrierLogos = cloudBlobContainer.ListBlobs()
-				.Select(_ => (CloudBlob) _)
-				.ToList();
-		}
+			try
+			{
+				var request = new GetCarrierLogosCommand(_storageAccountInfOptions.Value.ConnectionString, _storageAccountInfOptions.Value.ContainerName);
+				CarrierLogos = await _mediator.Send(request);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError("There was an error retrieving carrier logos: {0}", ex.Message);
+			}
+        }
 
 		public async Task OnPostAsync()
 		{
-			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);
-			var cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
-			var cloudBlobContainer = cloudBlobClient.GetContainerReference(_storageAccountInfOptions.Value.ContainerName);
-			var fileName = Upload.FileName;
-			var fileMimeType = Upload.ContentType;
-
-			if (await cloudBlobContainer.CreateIfNotExistsAsync())
-				await cloudBlobContainer.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-
-			var cloudBlockBlob = cloudBlobContainer.GetBlockBlobReference(fileName);
-			cloudBlockBlob.Properties.ContentType = fileMimeType;
-
-			await cloudBlockBlob.UploadFromStreamAsync(Upload.OpenReadStream());
-			var uri = cloudBlockBlob.Uri.AbsoluteUri;
-
-			OnGet();
-		}
+			try
+			{
+				var request = new PostCarrierLogoCommand(Upload);
+				var response = await _mediator.Send(request);
+			}
+            catch (Exception ex)
+            {
+                _logger.LogError("There was an error saving carrier logo: {0}", ex.Message);
+            }
+        }
 	}
 }
