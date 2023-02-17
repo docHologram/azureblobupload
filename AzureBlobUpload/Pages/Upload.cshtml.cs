@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Azure.Storage.Blobs.Models;
 using MediatR;
 using AzureBlobUpload.Events;
@@ -15,13 +14,11 @@ namespace AzureBlobUpload.Pages
 {
 	public class UploadModel : PageModel
 	{
-		private readonly IOptions<StorageAccountInfo> _storageAccountInfOptions;
 		private readonly IMediator _mediator;
 		private readonly ILogger _logger;
 
-		public UploadModel(IOptions<StorageAccountInfo> storageAccountInfOptions, IMediator mediator, ILogger logger)
+		public UploadModel(IMediator mediator, ILogger logger)
 		{
-            _storageAccountInfOptions = storageAccountInfOptions;
 			_mediator = mediator;
 			_logger = logger;
         }
@@ -32,12 +29,11 @@ namespace AzureBlobUpload.Pages
 		[BindProperty]
 		public List<BlobItem> CarrierLogos { get; set; }
 
-		public async void OnGetAsync()
+		public async Task OnGetAsync()
 		{
 			try
 			{
-				var request = new GetCarrierLogosCommand(_storageAccountInfOptions.Value.ConnectionString, _storageAccountInfOptions.Value.ContainerName);
-				CarrierLogos = await _mediator.Send(request);
+				CarrierLogos = await _mediator.Send(new ListCarrierLogosCommand());
 			}
 			catch (Exception ex)
 			{
@@ -49,8 +45,8 @@ namespace AzureBlobUpload.Pages
 		{
 			try
 			{
-				var request = new PostCarrierLogoCommand(Upload);
-				var response = await _mediator.Send(request);
+				await _mediator.Send(new PostCarrierLogoCommand(Upload));
+				await OnGetAsync();
 			}
             catch (Exception ex)
             {

@@ -12,19 +12,17 @@ namespace AzureBlobUpload.Events
 
     public class PostCarrierLogoHandler : IRequestHandler<PostCarrierLogoCommand, BlobContentInfo>
     {
-        private readonly BlobServiceClient _blobServiceClient;
+        private readonly BlobContainerClient _blobContainerClient;
 
-        public PostCarrierLogoHandler(BlobServiceClient blobServiceClient)
+        public PostCarrierLogoHandler(BlobContainerClient blobContainerClient)
         {
-            _blobServiceClient = blobServiceClient;
+            _blobContainerClient = blobContainerClient;
         }
 
         public async Task<BlobContentInfo> Handle(PostCarrierLogoCommand command, CancellationToken cancellationToken)
         {
-            var container = _blobServiceClient.GetBlobContainerClient("carrierlogoblobs");
-            var client = container.GetBlobClient(command.File.FileName);
-            var uploaded = command.File.OpenReadStream();
-            return await client.UploadAsync(uploaded, cancellationToken);
+            var blobClient = _blobContainerClient.GetBlobClient(command.File.FileName);
+            return await blobClient.UploadAsync(command.File.FileName);
         }
     }
 }

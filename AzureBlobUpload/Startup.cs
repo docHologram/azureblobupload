@@ -1,12 +1,9 @@
-using System;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Azure;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
 
 namespace AzureBlobUpload
@@ -22,12 +19,10 @@ namespace AzureBlobUpload
 		{
 			services.AddRazorPages();
 			services.AddOptions();
+			services.AddMediatR(typeof(Startup));
 
-			services.AddSingleton(_ =>
-				new BlobServiceClient(
-					new Uri(Configuration.GetSection("storageAccountUri").Value),
-					new DefaultAzureCredential())
-			);
+            services.Configure<StorageAccountInfo>(Configuration.GetSection("storageAccountInfo"));
+			services.AddSingleton(_ => new BlobContainerClient(Configuration["storageAccountInfo:connectionString"], "carrierlogos"));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

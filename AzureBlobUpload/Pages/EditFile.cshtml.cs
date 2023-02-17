@@ -1,28 +1,21 @@
 ﻿using System;
-using System.IO;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
+using AzureBlobUpload.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-using Microsoft.Extensions.Options;
 
 namespace AzureBlobUpload.Pages
 {
-	public class FileInfo
-	{
-		public string Name { get; set; }
-		public string Base64FileData { get; set; }
-		public string ContentType { get; set; }
-		public string Uri { get; set; }
-	}
 
 	public class EditFileModel : PageModel
 	{
-		private readonly IOptions<StorageAccountInfo> _storageAccountInfOptions;
+		private readonly BlobContainerClient _blobContainerClient;
 
-		public EditFileModel(IOptions<StorageAccountInfo> storageAccountInfOptions)
-			=> _storageAccountInfOptions = storageAccountInfOptions;
+		public EditFileModel(BlobContainerClient blobContainerClient)
+			=> _blobContainerClient = blobContainerClient;
 
 		[BindProperty]
 		public FileInfo FileInfo { get; set; }
@@ -32,42 +25,32 @@ namespace AzureBlobUpload.Pages
 
 		public async Task OnGetAsync(string fileName)
 		{
-			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);
-			var blobClient = cloudStorageAccount.CreateCloudBlobClient();
-			var container = blobClient.GetContainerReference(_storageAccountInfOptions.Value.ContainerName);
-			var file = await container.GetBlobReferenceFromServerAsync(fileName);
+			var blobClient = _blobContainerClient.GetBlobClient(fileName);
 
-			if (await file.ExistsAsync())
+            FileInfo = new FileInfo
+            {
+                Name = fileName,
+                Uri = blobClient.Uri.AbsoluteUri
+            };
+
+            using var memoryStream = new System.IO.MemoryStream();
+            using var result = await blobClient.DownloadToAsync(memoryStream);
+
+            if (!result.IsError)
 			{
-				FileInfo = new FileInfo
-				{
-					ContentType = file.Properties.ContentType,
-					Name = file.Name,
-					Uri = file.Uri.AbsoluteUri
-				};
-
-				using (var memoryStream = new MemoryStream())
-				{
-					await file.DownloadToStreamAsync(memoryStream);
-					var bytes = memoryStream.ToArray();
-					FileInfo.Base64FileData = Convert.ToBase64String(bytes, 0, bytes.Length);
-				}
+				FileInfo.ContentType = result.Headers.ContentType;
+				FileInfo.Base64FileData = Convert.ToBase64String(memoryStream.ToArray());
 			}
-		}
+            
+        }
 
 		public async Task OnPostAsync()
 		{
-			var cloudStorageAccount = CloudStorageAccount.Parse(_storageAccountInfOptions.Value.ConnectionString);
-			var cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
-			var cloudBlobContainer = cloudBlobClient.GetContainerReference(_storageAccountInfOptions.Value.ContainerName);
 			var fileName = Upload.FileName;
-			var fileMimeType = Upload.ContentType;
 
-			var cloudBlockBlob = cloudBlobContainer.GetBlockBlobReference(fileName);
-			cloudBlockBlob.Properties.ContentType = fileMimeType;
+            var blobClient = _blobContainerClient.GetBlobClient(fileName);
+			using var result = blobClient.UploadAsync(fileName);
 
-			await cloudBlockBlob.UploadFromStreamAsync(Upload.OpenReadStream());
-			var uri = cloudBlockBlob.Uri.AbsoluteUri;
 			await OnGetAsync(fileName);
 		}
 	}
